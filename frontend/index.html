@@ -1,1 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redis Message Board</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
+        h1 {
+            color: #333;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .response {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .messages {
+            max-width: 600px;
+            width: 100%;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
+        .msg-id {
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .msg-name {
+            font-weight: bold;
+        }
+
+        .msg-text {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Redis Message Board</h1>
+
+    <form id="messageForm">
+        <input type="text" id="name" placeholder="Your Name" required>
+        <textarea id="message" placeholder="Type your message..." required></textarea>
+        <button type="submit">Send Message</button>
+        <div class="response" id="response"></div>
+    </form>
+
+    <div class="messages">
+        <h2>Messages</h2>
+        <button onclick="loadMessages()">🔄 Refresh</button>
+        <ul id="messageList"></ul>
+    </div>
+
+    <script>
+        document.getElementById('messageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+
+            const response = await fetch('http://localhost:5000/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, message })
+            });
+
+            const result = await response.json();
+            document.getElementById('response').innerText = result.status;
+            document.getElementById('messageForm').reset();
+            loadMessages(); // Refresh list
+        });
+
+        async function loadMessages() {
+            const response = await fetch('http://localhost:5000/messages');
+            const messages = await response.json();
+            const list = document.getElementById('messageList');
+            list.innerHTML = '';
+
+            messages.forEach(msg => {
+                const li = document.createElement('li');
+                li.className = 'message-item';
+                li.innerHTML = `
+                    <div class="msg-id">#${msg.id}</div>
+                    <span class="msg-name">${msg.name}</span>
+                    <span class="msg-text">: ${msg.message}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        window.onload = loadMessages;
+    </script>
+</body>
+</html>
